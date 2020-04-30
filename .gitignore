@@ -1,3 +1,5 @@
 /.idea
 /venv
 newplayers.db
+/scorecards
+inp.html
