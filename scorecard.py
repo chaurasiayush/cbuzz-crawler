@@ -3,19 +3,21 @@ from bs4 import BeautifulSoup
 import json
 from pprint import pprint
 
-player_template = {"pid":"0","name":"","team_name":"","out_by":"None","runs_scored":"-1","balls_faced":"0","fours":"0","sixes":"0","strike_rate":"0","overs":"0","maiden":"0","runs_given":"0","wickets":"0","no_balls":"0","wide_balls":"0","CROST":"0","extras":"0"}
+player_template = {"pid":"0","name":"UNKNOWN","team":"UNKNOWN","out_by":"not played","runs_scored":"0","balls_faced":"0","fours":"0","sixes":"0","strike_rate":"0","overs":"0","maiden":"0","runs_given":"0","wickets":"0","no_balls":"0","wide_balls":"0"}
 
 
-def get_match(url):
-  with open("matches.json", "r") as f:
-    matches = json.load(f)
+def get_match(path):
+  # with open("matches.json", "r") as f:
+  #   matches = json.load(f)
   # matches = {"match": []}
   # pprint(matches)
   # print matches['match'][0]['match_name']
 
   # Scorecard = open('scorecard.html')
-  headers = {'User-Agent': 'Mozilla/5.0'}
-  Scorecard = requests.get(url, headers).text
+  # headers = {'User-Agent': 'Mozilla/5.0'}
+  # Scorecard = requests.get(url, headers).text
+
+  Scorecard = open(path, encoding='utf8').read()
 
   Soup = BeautifulSoup(Scorecard,"html.parser")
   # print soup
@@ -23,16 +25,19 @@ def get_match(url):
   match_name = match_name[:match_name.find('- Live Cricket Score, Commentary')].strip()
 
   # print(match_name)
-  for match in matches['match']:
-    if match_name == match['match_name']:
-      print("Match already exists...")
-      return match
+  # for match in matches['match']:
+  #   if match_name == match['match_name']:
+  #     print("Match already exists...")
+  #     return match
 
-  match = {}
-  match['match_name'] = match_name
-  match['url'] = url[url.find('cricket-scorecard/')+18:]
+  # match = {}
+  # match['match_name'] = match_name
+  # match['url'] = url[url.find('cricket-scorecard/')+18:]
 
-  Inning1 = Soup.find_all('div',id="innings_1")[0]
+  Inning1 = Soup.find_all('div',id="innings_1")
+  if len(Inning1) is 0:
+    return None;
+  Inning1 = Inning1[0]
   Inning1_batting = Inning1.find_all('div',class_="cb-col cb-col-100 cb-ltst-wgt-hdr")[0]
   Inning1_bowling = Inning1.find_all('div',class_="cb-col cb-col-100 cb-ltst-wgt-hdr")[1]
   Inning1_batting = Inning1_batting.find_all('div',class_="cb-col cb-col-100 cb-scrd-itms")
@@ -44,27 +49,34 @@ def get_match(url):
   team_name = Inning1.find('span').get_text()
   if 'Innings' in team_name:
     team_name = team_name[:team_name.find(' Innings')]
-  match['team1_name'] = team_name
-  match['team1_score'] = score
+  # match['team1_name'] = team_name
+  # match['team1_score'] = score
 
-
+  # print(match)
 
   # Inning 1 Start
 
   Inning1_batting_info = []
-  for b in Inning1_batting:
+  for b in Inning1_batting[:]:
     # pprint(b)
-    batsman = {}
+
     names = b.find_all('a',class_="cb-text-link")
+    # for n in tmpnames[:-1]:
+    #   names.append(n)
     # print(b)
     # print(names)
     # print()
 
     for name in names:
+      # print(name)
+      batsman = {}
       if name:
         pid = name['href'][10:]
         batsman['pid'] = str(pid[:pid.find('/')])
         batsman['name'] = str(name.get_text()).strip()
+        batsman['team'] = team_name
+        # print('bteeeeeeeeeeeeeeeeeeem',batsman)
+
         if '(' in batsman['name']:
           batsman['name'] = batsman['name'][:batsman['name'].find('(')].strip()
       out_by = b.find('span',class_="text-gray")
@@ -88,9 +100,11 @@ def get_match(url):
         batsman['fours'] = 0
         batsman['sixes'] = 0
         batsman['sr'] = 0
-      # print all_other
-      if len(batsman) > 0:
-        Inning1_batting_info.append(batsman)
+      # print all_othe
+      # print(batsman)
+      # if name:
+      Inning1_batting_info.append(batsman)
+      # print(Inning1_batting_info)
 
   # print(Inning1_batting_info)
 
@@ -130,7 +144,10 @@ def get_match(url):
   # Inning 2 Start
 
 
-  Inning2 = Soup.find_all('div',id="innings_2")[0]
+  Inning2 = Soup.find_all('div',id="innings_2")
+  if len(Inning2) is 0:
+    return None;
+  Inning2 = Inning2[0]
   Inning2_batting = Inning2.find_all('div',class_="cb-col cb-col-100 cb-ltst-wgt-hdr")[0]
   Inning2_bowling = Inning2.find_all('div',class_="cb-col cb-col-100 cb-ltst-wgt-hdr")[1]
   Inning2_batting = Inning2_batting.find_all('div',class_="cb-col cb-col-100 cb-scrd-itms")
@@ -142,8 +159,8 @@ def get_match(url):
   team_name = Inning2.find('span').get_text()
   if 'Innings' in team_name:
     team_name = team_name[:team_name.find(' Innings')]
-  match['team2_name'] = team_name
-  match['team2_score'] = score
+  # match['team2_name'] = team_name
+  # match['team2_score'] = score
 
   # print(Inning2_batting)
   # print(Inning2_bowling)
@@ -153,14 +170,16 @@ def get_match(url):
   Inning2_batting_info = []
   for b in Inning2_batting:
     # pprint(b)
-    batsman = {}
+
     names = b.find_all('a',class_="cb-text-link")
 
     for name in names:
       if name:
+        batsman = {}
         pid = name['href'][10:]
         batsman['pid'] = str(pid[:pid.find('/')])
         batsman['name'] = str(name.get_text()).strip()
+        batsman['team'] = team_name
         if '(' in batsman['name']:
           batsman['name'] = batsman['name'][:batsman['name'].find('(')].strip()
       out_by = b.find('span',class_="text-gray")
@@ -188,9 +207,9 @@ def get_match(url):
 
       # print('im2 btsman', batsman)
       # print all_other
-      if len(batsman) > 0:
-        Inning2_batting_info.append(batsman)
-  # print(Inning2_batting_info)
+      # if len(batsman) > 0:
+      Inning2_batting_info.append(batsman)
+      # print(Inning2_batting_info)
 
 
   Inning2_bowling_info = []
@@ -244,7 +263,7 @@ def get_match(url):
 
     # print(players)
 
-  print(Inning1_batting_info)
+  # print(Inning1_batting_info)
   # print(players)
   for p in Inning1_batting_info:
     if p['pid'] in players:
@@ -256,6 +275,7 @@ def get_match(url):
       players[p['pid']]['out_by'] = p['out_by']
       players[p['pid']]['strike_rate'] = p['sr']
       players[p['pid']]['pid'] = p['pid']
+      players[p['pid']]['team'] = p['team']
 
 
   for p in Inning1_bowling_info:
@@ -268,6 +288,7 @@ def get_match(url):
       players[p['pid']]['wickets'] = p['wickets']
       players[p['pid']]['wide_balls'] = p['wide_balls']
       players[p['pid']]['pid'] = p['pid']
+      # players[p['pid']]['team'] = p['team']
 
 
   for p in Inning2_batting_info:
@@ -280,6 +301,7 @@ def get_match(url):
       players[p['pid']]['out_by'] = p['out_by']
       players[p['pid']]['strike_rate'] = p['sr']
       players[p['pid']]['pid'] = p['pid']
+      players[p['pid']]['team'] = p['team']
 
 
   for p in Inning2_bowling_info:
@@ -292,18 +314,21 @@ def get_match(url):
       players[p['pid']]['wickets'] = p['wickets']
       players[p['pid']]['wide_balls'] = p['wide_balls']
       players[p['pid']]['pid'] = p['pid']
+      # players[p['pid']]['team'] = p['team']
 
-  match['players'] = players
-  matches["match"].append(match)
+  # match['players'] = players
+  # matches["match"].append(match)
 
-  print(match)
+  # print(players)
   # with open('matches.json', 'w') as f:
   #   json.dump(matches,f)
-  return match
+  return players
 # print json.dumps(matches,sort_keys=True,indent=4, separators=(',', ': '))
 
 
 
 # url = "http://www.cricbuzz.com/cricket-scorecard/16391/kxip-vs-gl-3rd-match-indian-premier-league-2016"
-url = 'https://www.cricbuzz.com/live-cricket-scorecard/23464/ngl-vs-mnp-round-1-plate-vijay-hazare-trophy-2019-20'
-get_match(url)
+# url = 'https://www.cricbuzz.com/live-cricket-scorecard/23464/ngl-vs-mnp-round-1-plate-vijay-hazare-trophy-2019-20'
+# get_match(url)
+# for k in player_template.keys():
+#   print(k)
