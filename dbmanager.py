@@ -93,7 +93,7 @@ def driver_insertscorecardinfo():
                 args = (p['pid'], p['name'], p['team'])
 
                 notout = 0
-                if p['out_by'] is "none" or p['out_by'] is "not out":
+                if p['out_by'] == "none" or p['out_by'] == "not out":
                     notout = 1
 
                 sargs = (

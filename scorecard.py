@@ -35,7 +35,7 @@ def get_match(path):
   # match['url'] = url[url.find('cricket-scorecard/')+18:]
 
   Inning1 = Soup.find_all('div',id="innings_1")
-  if len(Inning1) is 0:
+  if len(Inning1) == 0:
     return None;
   Inning1 = Inning1[0]
   Inning1_batting = Inning1.find_all('div',class_="cb-col cb-col-100 cb-ltst-wgt-hdr")[0]
@@ -145,7 +145,7 @@ def get_match(path):
 
 
   Inning2 = Soup.find_all('div',id="innings_2")
-  if len(Inning2) is 0:
+  if len(Inning2) == 0:
     return None;
   Inning2 = Inning2[0]
   Inning2_batting = Inning2.find_all('div',class_="cb-col cb-col-100 cb-ltst-wgt-hdr")[0]
